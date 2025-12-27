@@ -23,14 +23,14 @@ users_data = [
 ]
 
 for u in users_data:
-
     hashed = get_password_hash(u["password"])
-
     user = User(email=u["email"], hashed_password=hashed, full_name=u["full_name"], role=u["role"], department=u.get("department"), year=u.get("year"))
-
-    db.add(user)
-
-db.commit()
+    try:
+        db.add(user)
+        db.commit()
+    except Exception:
+        db.rollback()
+        print(f"User {u['email']} already exists.")
 
 # Sample activity
 

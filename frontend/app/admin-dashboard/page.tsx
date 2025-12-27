@@ -46,7 +46,7 @@ export default function AdminDashboard() {
 
     try {
       const config = { headers: { Authorization: `Bearer ${token}` } };
-      const API_BASE = "http://127.0.0.1:8000";
+      const API_BASE = "http://localhost:8000";
 
       // Parallel Fetching
       const [userRes, analyticsRes] = await Promise.allSettled([

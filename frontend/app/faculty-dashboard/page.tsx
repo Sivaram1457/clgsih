@@ -55,7 +55,7 @@ export default function FacultyDashboard() {
 
     try {
       const config = { headers: { Authorization: `Bearer ${token}` } };
-      const API_BASE = "http://127.0.0.1:8000";
+      const API_BASE = "http://localhost:8000";
 
       // Parallel Data Fetching
       const [userRes, pendingRes, studentsRes] = await Promise.allSettled([
@@ -93,7 +93,7 @@ export default function FacultyDashboard() {
 
   const updateActivityStatus = async (activityId: string, action: "approve" | "reject") => {
     const token = localStorage.getItem("token");
-    const API_BASE = "http://127.0.0.1:8000";
+    const API_BASE = "http://localhost:8000";
 
     try {
       await axios.put(`${API_BASE}/activities/${activityId}/${action}`, {}, {
@@ -190,9 +190,19 @@ export default function FacultyDashboard() {
 
           {/* 2. Approval Panel */}
           <div className="lg:col-span-2 space-y-6">
-            <h2 className="text-xl font-bold flex items-center gap-2">
-              <CheckSquare className="w-5 h-5 text-indigo-500" /> Pending Approvals
-            </h2>
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                <CheckSquare className="w-5 h-5 text-indigo-500" /> Pending Approvals
+              </h2>
+              <button
+                onClick={fetchDashboardData}
+                disabled={loading}
+                className="text-sm bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 px-3 py-1 rounded-lg hover:bg-indigo-100 transition flex items-center gap-1"
+              >
+                <AlertCircle className="w-4 h-4" />
+                {loading ? "Refreshing..." : "Refresh"}
+              </button>
+            </div>
 
             {pendingActivities.length > 0 ? (
               <div className="space-y-4">

@@ -65,11 +65,11 @@ def get_pending_activities(
     if not current_user.department:
         return []
 
-    # 1. Get all student IDs belonging to this faculty's department
-    # 1. Get all student IDs belonging to this faculty's department AND year
+    # 1. Get all student IDs belonging to this faculty's department (Case-Insensitive)
+    from sqlalchemy import func
     query = db.query(User.id).filter(
         User.role == "student",
-        User.department == current_user.department
+        func.upper(User.department) == func.upper(current_user.department)
     )
 
     if current_user.year:
@@ -90,8 +90,11 @@ def get_pending_activities(
     }))
 
     for activity in activities:
-        activity["id"] = str(activity["_id"])
-        del activity["_id"]
+        # Robust ID handling: prefer _id, fallback to id
+        obj_id = activity.get("_id") or activity.get("id")
+        activity["id"] = str(obj_id)
+        if "_id" in activity:
+            del activity["_id"]
 
     return [Activity(**activity) for activity in activities]
 

@@ -32,7 +32,7 @@ export default function Register() {
             };
 
             // Using direct fetch for better debugging control
-            const response = await axios.post("http://127.0.0.1:8000/auth/register", dataToSend, {
+            const response = await axios.post("http://localhost:8000/auth/register", dataToSend, {
                 headers: {
                     'Content-Type': 'application/json'
                 }

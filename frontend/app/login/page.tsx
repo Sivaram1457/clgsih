@@ -13,16 +13,22 @@ export default function Login() {
   const handleLogin = async (e: any) => {
     e.preventDefault();
     try {
+      const API_BASE = "http://localhost:8000";
       // 1. Authenticate to get token
-      const authResponse = await axios.post("http://localhost:8000/auth/token", new URLSearchParams({
-        username: email,
-        password,
-      }));
+      const params = new URLSearchParams();
+      params.append('username', email);
+      params.append('password', password);
+
+      const authResponse = await axios.post(`${API_BASE}/auth/token`, params, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      });
       const token = authResponse.data.access_token;
       localStorage.setItem("token", token);
 
       // 2. Fetch user details to get role
-      const userResponse = await axios.get("http://localhost:8000/auth/me", {
+      const userResponse = await axios.get(`${API_BASE}/auth/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const userRole = userResponse.data.role;

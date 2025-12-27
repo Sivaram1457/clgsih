@@ -46,9 +46,14 @@ export default function StudentDashboard() {
   const [academicRecords, setAcademicRecords] = useState<AcademicRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newActivity, setNewActivity] = useState({ title: "", description: "", category: "Hackathon" });
+  const [submitting, setSubmitting] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
+    setMounted(true);
     fetchDashboardData();
   }, []);
 
@@ -61,7 +66,7 @@ export default function StudentDashboard() {
 
     try {
       const config = { headers: { Authorization: `Bearer ${token}` } };
-      const API_BASE = "http://127.0.0.1:8000";
+      const API_BASE = "http://localhost:8000";
 
       // Parallel data fetching
       const [userRes, activityRes, academicRes] = await Promise.allSettled([
@@ -98,6 +103,35 @@ export default function StudentDashboard() {
       // alert("Error loading dashboard data. Please check connection.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCreateActivity = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    setSubmitting(true);
+    try {
+      const API_BASE = "http://localhost:8000";
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+
+      const payload = {
+        ...newActivity,
+        duration: "1 day", // default
+        skills_gained: ["Critical Thinking"], // default
+      };
+
+      const res = await axios.post(`${API_BASE}/activities/`, payload, config);
+      setActivities([res.data, ...activities]);
+      setIsModalOpen(false);
+      setNewActivity({ title: "", description: "", category: "Hackathon" });
+      alert("Activity submitted successfully!");
+    } catch (error) {
+      console.error("Error creating activity:", error);
+      alert("Failed to create activity.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -290,9 +324,12 @@ export default function StudentDashboard() {
             <h3 className="text-lg font-bold flex items-center gap-2">
               <Activity className="w-5 h-5 text-green-500" /> Activity Timeline
             </h3>
-            <span className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-gray-500">
-              Showing all
-            </span>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition"
+            >
+              + Add Activity
+            </button>
           </div>
 
           {activities.length > 0 ? (
@@ -300,7 +337,7 @@ export default function StudentDashboard() {
               {activities.map((activity) => (
                 <div key={activity.id} className="flex gap-4 p-4 border border-gray-100 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
                   <div className={`mt-1 flex-shrink-0 ${activity.status === 'approved' ? 'text-green-500' :
-                      activity.status === 'rejected' ? 'text-red-500' : 'text-yellow-500'
+                    activity.status === 'rejected' ? 'text-red-500' : 'text-yellow-500'
                     }`}>
                     {getStatusIcon(activity.status)}
                   </div>
@@ -313,7 +350,7 @@ export default function StudentDashboard() {
                     </div>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{activity.description}</p>
                     <div className="mt-2 text-xs text-gray-400">
-                      Submitted on {new Date(activity.created_at || Date.now()).toLocaleDateString()}
+                      Submitted on {mounted ? new Date(activity.created_at || Date.now()).toLocaleDateString() : '...'}
                     </div>
                   </div>
                 </div>
@@ -323,10 +360,75 @@ export default function StudentDashboard() {
             <div className="text-center py-12 text-gray-400">
               <Activity className="w-12 h-12 mx-auto mb-3 opacity-20" />
               <p>No activities recorded yet.</p>
-              <button className="mt-4 text-blue-500 font-medium hover:underline">Add your first activity</button>
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="mt-4 text-blue-500 font-medium hover:underline"
+              >
+                Add your first activity
+              </button>
             </div>
           )}
         </section>
+
+        {/* Modal */}
+        {isModalOpen && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 w-full max-w-md shadow-2xl border border-gray-100 dark:border-gray-700">
+              <h2 className="text-2xl font-bold mb-6">New Activity Submission</h2>
+              <form onSubmit={handleCreateActivity} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-bold mb-1">Title</label>
+                  <input
+                    className="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl"
+                    placeholder="e.g. Smart India Hackathon"
+                    required
+                    value={newActivity.title}
+                    onChange={(e) => setNewActivity({ ...newActivity, title: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold mb-1">Category</label>
+                  <select
+                    className="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl"
+                    value={newActivity.category}
+                    onChange={(e) => setNewActivity({ ...newActivity, category: e.target.value })}
+                  >
+                    <option>Hackathon</option>
+                    <option>Symposium</option>
+                    <option>Workshop</option>
+                    <option>Paper Publication</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold mb-1">Description</label>
+                  <textarea
+                    className="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl h-24"
+                    placeholder="Briefly describe your achievement"
+                    required
+                    value={newActivity.description}
+                    onChange={(e) => setNewActivity({ ...newActivity, description: e.target.value })}
+                  />
+                </div>
+                <div className="flex gap-4 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="flex-1 py-3 border border-gray-200 dark:border-gray-600 rounded-xl font-bold hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition disabled:opacity-50 shadow-lg shadow-blue-500/20"
+                  >
+                    {submitting ? "Submitting..." : "Submit"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
